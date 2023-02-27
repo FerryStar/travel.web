@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>云南旅游-搜索</title>
+    <link rel="stylesheet" type="text/css" href="css/common.css">
+    <link rel="stylesheet" href="css/search.css">
+    <script src="js/jquery-3.3.1.js"></script>
+    <script src="js/getParameter.js"></script>
+
+    <script>
+        $(function () {
+            /*var search = location.search;  //该方法得到 ?后面的字符串 ?cid=6
+            //alert(search);
+            var cid = search.split("=")[1];  //切割得到id值*/
+            var cid = getParameter("cid");
+            //获取rname的参数值
+            var rname = getParameter("rname");
+            if (rname) {
+                rname = window.decodeURIComponent(rname);  //解码
+            }
+
+            //当页面加载完成后，调用load方法，发送ajax请求加载数据
+            load(cid, null, rname);
+
+        });
+
+        function load(cid, currentPage, rname) {
+            //发送Ajax请求，请求route/pageQ，传递cid
+            $.get("route/pageQ", {cid: cid, currentPage: currentPage, rname: rname}, function (pb) {
+                //解析pagebean数据，展示到页面上
+
+                //1、分页工具条的数据展示
+                $("#totalPage").html(pb.totalPage);  //展示总页面数
+                $("#totalCount").html(pb.totalCount);  //总记录数
+                /* <li><a href="">首页</a></li>
+                                        <li class="threeword"><a href="#">上一页</a></li>
+                                        <li class="curPage"><a href="#">1</a></li>
+                                        <li><a href="#">2</a></li>
+                                        <li><a href="#">3</a></li>
+                                        <li><a href="#">4</a></li>
+                                        <li><a href="#">5</a></li>
+                                        <li><a href="#">6</a></li>
+                                        <li><a href="#">7</a></li>
+                                        <li><a href="#">8</a></li>
+                                        <li><a href="#">9</a></li>
+                                        <li><a href="#">10</a></li>
+                                        <li class="threeword"><a href="javascript:;">下一页</a></li>
+                                        <li class="threeword"><a href="javascript:;">末页</a></li>*/
+                var lis = "";
+                var firstPage = '<li><a href="javascript:load(' + cid + ',1,\'' + rname + '\')">首页</a></li>';
+                //计算“上一页”的页码
+                var beforeNum = pb.currentPage - 1;
+                if (beforeNum <= 0) {
+                    beforeNum = 1;
+                }
+                var prePage = '<li class="threeword"><a href="javascript:load(' + cid + ',' + beforeNum + ',\'' + rname + '\')">上一页</a></li>';
+
+                lis += firstPage;
+                lis += prePage;
+
+                for (var i = 1; i <= pb.totalPage; i++) {
+                    var li;
+                    //判断currentPage是否等于i，当前页加黄
+                    if (pb.currentPage == i) {
+                        li = '<li class="curPage"><a href="javascript:load(' + cid + ',' + i + ',\'' + rname + '\')">' + i + '</a></li>';
+                    } else {
+                        li = '<li><a href="javascript:load(' + cid + ',' + i + ',\'' + rname + '\')">' + i + '</a></li>';
+                    }
+                    lis += li;
+                }
+
+                //计算最后一页的页码
+                var lastNum = pb.totalPage;
+                //计算nextPage的页码
+                var nextNum;
+                if (pb.currentPage >= lastNum) {
+                    nextNum = pb.currentPage;
+                } else {
+                    nextNum = pb.currentPage + 1;
+                }
+                var nextPage = '<li class="threeword"><a href="javascript:load(' + cid + ',' + nextNum + ',\'' + rname + '\')">下一页</a></li>';
+                var lastPage = '<li class="threeword"><a href="javascript:load(' + cid + ',' + lastNum + ',\'' + rname + '\')">末页</a></li>';
+
+                lis += nextPage;
+                lis += lastPage;
+
+                //将lis的内容设置到 ul 中
+                $("#pageNum").html(lis);
+
+                //2、列表数据的展示
+                var liss = "";
+                for (var i = 0; i < pb.list.length; i++) {
+                    var route = pb.list[i];
+                    var lii = '<li>\n' +
+                        '                        <div class="img"><img src="' + route.rimage + '" style="width: 299px;"></div>\n' +
+                        '                        <div class="text1">\n' +
+                        '                            <p>' + route.rname + '</p>\n' +
+                        '                            <br/>\n' +
+                        '                            <p>' + route.routeIntroduce + '</p>\n' +
+                        '                        </div>\n' +
+                        '                        <div class="price">\n' +
+                        '                            <p class="price_num">\n' +
+                        '                                <span>&yen;</span>\n' +
+                        '                                <span>' + route.price + '</span>\n' +
+                        '                                <span>起</span>\n' +
+                        '                            </p>\n' +
+                        '                            <p><a href="route_detail.html?rid=' + route.rid + '">查看详情</a></p>\n' +
+                        '                        </div>\n' +
+                        '                    </li>';
+                    liss += lii;
+                }
+                $("#route").html(liss);
+                //定位到页面顶部
+                window.scrollTo(0, 0);
+
+            });
+        }
+
+    </script>
+
+</head>
+<body>
+<!--引入头部-->
+<div id="header"></div>
+<div class="page_one">
+    <div class="contant">
+        <div class="crumbs">
+            <img src="images/search.png" alt="">
+            <p>云南旅行><span>搜索结果</span></p>
+        </div>
+        <div class="xinxi clearfix">
+            <div class="left">
+                <div class="header">
+                    <span>商品信息</span>
+                    <span class="jg">价格</span>
+                </div>
+                <ul id="route">
+                    <!--<li>
+                        <div class="img"><img src="images/04-search_03.jpg" alt=""></div>
+                        <div class="text1">
+                            <p>【减100元 含除夕/春节出发】广州增城三英温泉度假酒店/自由行套票</p>
+                            <br/>
+                            <p>1-2月出发，网付立享￥1099/2人起！爆款位置有限，抢完即止！</p>
+                        </div>
+                        <div class="price">
+                            <p class="price_num">
+                                <span>&yen;</span>
+                                <span>299</span>
+                                <span>起</span>
+                            </p>
+                            <p><a href="route_detail.html">查看详情</a></p>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="img"><img src="images/04-search_03.jpg" alt=""></div>
+                        <div class="text1">
+                            <p>浪花朵朵旅行普吉岛皇帝岛珊瑚岛香蕉船拖拽伞水上项目</p>
+                            <br/>
+                            <p>1-2月出发，网付立享￥1099/2人起！爆款位置有限，抢完即止！</p>
+                        </div>
+                        <div class="price">
+                            <p class="price_num">
+                                <span>&yen;</span>
+                                <span>99</span>
+                                <span>起</span>
+                            </p>
+                            <p><a href="route_detail.html">查看详情</a></p>
+                        </div>
+                    </li>
+                    -->
+                </ul>
+                <div class="page_num_inf">
+                    <i></i> 共
+                    <span id="totalPage">12</span>页<span id="totalCount">132</span>条
+                </div>
+                <div class="pageNum">
+                    <ul id="pageNum">
+                        <!-- <li><a href="">首页</a></li>
+                         <li class="threeword"><a href="#">上一页</a></li>
+                         <li class="curPage"><a href="#">1</a></li>
+                         <li><a href="#">2</a></li>
+                         <li><a href="#">3</a></li>
+                         <li><a href="#">4</a></li>
+                         <li><a href="#">5</a></li>
+                         <li><a href="#">6</a></li>
+                         <li><a href="#">7</a></li>
+                         <li><a href="#">8</a></li>
+                         <li><a href="#">9</a></li>
+                         <li><a href="#">10</a></li>
+                         <li class="threeword"><a href="javascript:;">下一页</a></li>
+                         <li class="threeword"><a href="javascript:;">末页</a></li>-->
+                    </ul>
+                </div>
+            </div>
+            <div class="right">
+                <div class="top">
+                    <div class="hot">HOT</div>
+                    <span>热门推荐</span>
+                </div>
+                <ul>
+                    <li>
+                        <div class="left"><img src="images/629ADA45580F2AA16E63090A59C5698C7526813A_size134_w1080_h720.jpg" alt=""></div>
+                        <div class="right">
+                            <p>云南省腾冲市荷花镇肖庄街</p>
+                            <p>网付价<span>&yen;<span>9999</span>起</span>
+                            </p>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="left"><img src="images/629ADA45580F2AA16E63090A59C5698C7526813A_size134_w1080_h720.jpg" alt=""></div>
+                        <div class="right">
+                            <p>云南省腾冲市荷花镇肖庄街</p>
+                            <p>网付价<span>&yen;<span>9999</span>起</span>
+                            </p>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="left"><img src="images/629ADA45580F2AA16E63090A59C5698C7526813A_size134_w1080_h720.jpg" alt=""></div>
+                        <div class="right">
+                            <p>云南省腾冲市荷花镇肖庄街</p>
+                            <p>网付价<span>&yen;<span>9999</span>起</span>
+                            </p>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="left"><img src="images/629ADA45580F2AA16E63090A59C5698C7526813A_size134_w1080_h720.jpg" alt=""></div>
+                        <div class="right">
+                            <p>云南省腾冲市荷花镇肖庄街</p>
+                            <p>网付价<span>&yen;<span>9999</span>起</span>
+                            </p>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="left"><img src="images/629ADA45580F2AA16E63090A59C5698C7526813A_size134_w1080_h720.jpg" alt=""></div>
+                        <div class="right">
+                            <p>云南省腾冲市荷花镇肖庄街</p>
+                            <p>网付价<span>&yen;<span>9999</span>起</span>
+                            </p>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!--导入布局js，共享header和footer-->
+<script type="text/javascript" src="js/include.js"></script>
+</body>
+
+</html>
